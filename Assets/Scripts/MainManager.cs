@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -16,6 +17,8 @@ public class MainManager : MonoBehaviour
     
     private bool m_Started = false;
     private int m_Points;
+    private int bestScore = 0;
+    private string bestUser = "-";
     
     private bool m_GameOver = false;
 
@@ -41,7 +44,9 @@ public class MainManager : MonoBehaviour
 
     private void Awake()
     {
-        SecondText.text = "Best Score: Name: " + MenuUIHandler.Instance.name;
+        LoadBestScore();
+        ScoreText.text = "Score : 0 Name: " + MenuUIHandler.Instance.name;
+        SecondText.text = "Best Score: " + bestScore + " Name: " + bestUser;
     }
 
     private void Update()
@@ -71,12 +76,50 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = $"Score : {m_Points} Name: " + MenuUIHandler.Instance.name;
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        if(m_Points > bestScore)
+        {
+            SaveScore();
+        }
+    }
+
+
+    public void SaveScore()
+    {
+        SaveData data = new SaveData();
+        data.score = m_Points;
+        data.user = MenuUIHandler.Instance.name;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadBestScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            bestScore = data.score;
+            bestUser = data.user;
+        }
+    }
+
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int score;
+        public string user;
     }
 }
